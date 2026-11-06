@@ -1,0 +1,45 @@
+name: Compare File MD5 Hashes
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch: # Allows manual triggering
+
+jobs:
+  compare-hashes:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Check out the repository so the runner can access the files
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # Step 2: Calculate and compare MD5 hashes
+      - name: Compute and Compare MD5
+        run: |
+          # Define file names (Replace with your actual file names)
+          FILE1="Shelly(1).png"
+          FILE2="Shelly_restored.png"
+          
+          # Verify both files exist before hashing
+          if [ ! -f "$FILE1" ] || [ ! -f "$FILE2" ]; then
+            echo "::error::One or both files do not exist in the root directory."
+            exit 1
+          fi
+
+          # Calculate MD5 hashes (awk extracts just the hash part)
+          HASH1=$(md5sum "$FILE1" | awk '{print $1}')
+          HASH2=$(md5sum "$FILE2" | awk '{print $1}')
+
+          echo "MD5 of $FILE1: $HASH1"
+          echo "MD5 of $FILE2: $HASH2"
+
+          # Compare the hashes
+          if [ "$HASH1" = "$HASH2" ]; then
+            echo "Success: MD5 hashes match perfectly!"
+          else
+            echo "::error::Mismatch! The MD5 hashes are different."
+            exit 1
+          fi
